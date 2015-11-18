@@ -1,0 +1,67 @@
+<html>
+<head>
+    <title>测试Ajax</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <script src="//cdn.bootcss.com/jquery/1.11.3/jquery.min.js"></script>
+
+    <style type="text/css">
+#result{
+    border: 10px;
+    font-size: 50px;
+    background: white;
+}
+    </style>
+</head>
+<body>
+    <form>
+    <input type="text" id="word" > <br>
+    <button id="foo" type="button">点击</button>
+  </form>
+  <a href='/ajax?id=papa' id="fav">收藏</a>
+    <div id="result">
+    </div>
+<script type="text/javascript">
+$(document).ready(function(){
+    $('#fav').click(function(e){
+      var node = $(this);
+      var favurl  = $('#fav').attr('href');
+      // alert(fav);
+      e.preventDefault();
+      $.getJSON(favurl, function(data){
+          node.text(data.papa)
+      })
+    })
+})
+</script>
+<script type="text/javascript">
+$(document).ready(function(){
+    $('#foo').click(function(){
+      var vv = $('#word').val();
+      var pd = {x:vv};
+      if (vv){
+      // alert($('#word').val());
+      $.ajax({
+          type:"get",
+          url:"/echo2",
+          data:pd,
+          cache:false,
+          dataType: 'json',
+          success:function(data){
+            var newitem = "<span>"+data.hehe+"</span><span>"
+            // $('#result').prepend(newitem);
+            alert(newitem)
+          },
+          error:function(data){
+            alert('error!');
+          },
+      })
+      }
+      else{
+        alert('nothing');
+      }
+    })
+})
+</script>
+
+</body>
+</html>

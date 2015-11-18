@@ -1,0 +1,91 @@
+{% extends 'snippet/layout.html' %}
+
+{% block main %}
+    <div class="topics container-box node-topics">
+        <div class="ui-header">
+            <a class="btn btn-small fr" type="button" href="/t/create/{{ node.slug }}">创建新主题</a>
+            <span class="bread-nav"><a href="{{ url_for('main.index') }}">F2E</a> › {{ node.name }}</span>
+        </div>
+
+        <div class="ui-content">
+            {% for topic in topics %}
+                <div class="topic-item">
+                    <a href="/u/{{ topic.User.username }}">
+                        <img src="/static/avatar/m_{{ topic.User.avatar or 'default.png' }}" alt="" class="avatar" />
+                    </a>
+                    <div class="main">
+                        <h3 class="title">
+                            <a href="/t/{{ topic.Topic.id }}#reply{{ topic.Topic.reply_count or 0 }}">{{ topic.Topic.title }}</a>
+                        </h3>
+                        <div class="meta">
+                            <span class="node"><a href="/node/{{ node.slug }}">{{ node.name }}</a></span> •
+                            <span class="username">
+                                <a href="/u/{{ topic.User.username or topic.User.uid }}">{{ topic.User.username }}</a>
+                            </span> •
+                            {% if topic.Topic.last_replied_time %}
+                                <span class="last-touched">{{ moment(topic.Topic.last_touched).fromNow(refresh=True) }}</span> •
+                                <span class="last-reply-username">最后回复来自
+                                    <a href="/u/{{ topic.Topic.last_replied_by }}">
+                                        <strong>{{ topic.Topic.last_replied_by }}</strong>
+                                    </a>
+                                </span>
+                            {% else %}
+                                <span class="last-touched">{{ moment(topic.Topic.created).fromNow(refresh=True) }}</span>
+                            {% endif %}
+                        </div>
+                    </div>
+                    {% if topic.Topic.reply_count %}
+                        <div class="count">
+                            <a href="/t/{{ topic.id }}#reply{{ topic.reply_count or 0 }}">{{ topic.Topic.reply_count or 0 }}</a>
+                        </div>
+                    {% endif %}
+                </div>
+            {% endfor %}
+
+            {% if not topics %}
+                <div class="pl10 pr10">
+                    <div class="alert mt20 no-topics">
+                        该结点下暂时还没有主题，发出你的讨论吧。
+                    </div>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+{% endblock %}
+
+{% block sidebar %}
+    {% if current_user.is_authenticated %}
+        <div class="usercard container-box">
+            <div class="ui-header">
+                <a href="/u/{{ current_user.username }}">
+                    <img src="/static/avatar/m_{{ current_user.avatar or 'default.png' }}" alt="" class="avatar" />
+                </a>
+                <div class="username">{{ current_user.username }}</div>
+                <div class="website"><a href="{{ current_user.website or '' }}">{{ current_user.website or '' }}</a></div>
+            </div>
+            <div class="ui-content">
+                <div class="status status-topic">
+                    <strong><a href="/u/{{ current_user.username }}/topics">{{ user_topic_count }}</a></strong> 主题
+                </div>
+                <div class="status status-reply">
+                    <strong><a href="/u/{{ current_user.username }}/replies">{{ user_reply_count }}</a></strong> 回复
+                </div>
+                <div class="status status-favorite">
+                    <strong><a href="/u/{{ current_user.username }}/favorites">{{ user_favorite_count }}</a></strong> 收藏
+                </div>
+                <div class="status status-reputation">
+                    <strong>{{ current_user.reputation or 0 }}</strong> 威望
+                </div>
+            </div>
+        </div>
+    {% else %}
+        <div class="login-box container-box">
+            <div class="ui-content tc">
+                <a class="btn btn-small" type="button" href="/login">登录</a>
+                <a class="btn btn-small" type="button" href="/register">注册</a>
+                <a class="btn btn-small" type="button" href="/forgot">找回密码</a>
+            </div>
+        </div>
+    {% endif %}
+</div>
+{% endblock %}
