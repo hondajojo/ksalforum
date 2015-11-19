@@ -146,10 +146,8 @@ $(document).ready(function(){
             </div>
             <div class="ui-content">
                 <form class="mt10" action="" method="post">
-                    <!-- <textarea rows="3" class="content mt5 smart-code-support J_replyContent" placeholder="回复内容" name="content"></textarea> -->
                     {{ form.hidden_tag() }}
                     {{ form.content(class='content mt5 smart-code-support J_replyContent')}}
-                    <!-- <input type="submit" id="checkall" class="btn btn-small" value="立即回复"> -->
                     {{ form.submit(class="btn btn-small",value="立即回复") }}
                 </form>
             </div>

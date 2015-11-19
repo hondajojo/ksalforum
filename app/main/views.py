@@ -296,6 +296,39 @@ def edit_reply(id):
     return render_template('topic/reply_edit.html', form=form, user_topic_count=user_topic_count, \
         user_favorite_count=user_favorite_count, user_reply_count=user_reply_count)
 
+
+@main.route('/u/<username>')
+def profile(username):
+    query01 = db.session.query(Topic, Node, User)
+    query02 = db.session.query(Reply,Topic,User)
+    user_info = User.query.filter_by(username=username).first_or_404()
+    topics = query01.filter_by(author_id=user_info.uid).join(Node, Topic.node_id==Node.id)\
+            .join(User, Topic.author_id==User.uid).order_by(Topic.created.desc()).all()
+    replies = query02.filter_by(author_id=user_info.uid).join(Topic, Reply.topic_id==Topic.id)\
+            .join(User, Reply.author_id==User.uid).order_by(Reply.created.desc()).all()
+
+    user_topic_count = Topic.query.filter_by(author_id=user_info.uid).count()
+    user_reply_count = Reply.query.filter_by(author_id=user_info.uid).count()
+    user_favorite_count = Favorite.query.filter_by(involved_reply_id=user_info.uid).count()
+
+    return render_template('topic/profile.html', user_info=user_info, topics=topics, replies=replies, \
+            user_topic_count=user_topic_count, user_favorite_count=user_favorite_count, \
+            user_reply_count=user_reply_count)
+
+@main.route('/u/<username>/topics')
+def user_topics(username):
+    user_info = User.query.filter_by(username=username).first_or_404()
+    query = db.session.query(Topic, Node, User)
+    topics = query.filter_by(author_id=user_info.uid).join(Node, Topic.node_id==Node.id)\
+            .join(User, Topic.author_id==User.uid).order_by(Topic.created.desc()).all()
+
+    user_topic_count = Topic.query.filter_by(author_id=user_info.uid).count()
+    user_reply_count = Reply.query.filter_by(author_id=user_info.uid).count()
+    user_favorite_count = Favorite.query.filter_by(involved_reply_id=user_info.uid).count()
+
+    return render_template('topic/user_topics.html', topics=topics, user_info=user_info, \
+            user_topic_count=user_topic_count, user_favorite_count=user_favorite_count, \
+            user_reply_count=user_reply_count)
 """
 an ajax example
 """

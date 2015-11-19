@@ -15,10 +15,7 @@
         <div class="ui-content">
             <form class="mt10" action="" method="post">
               {{ form.hidden_tag() }}
-                <!-- <textarea rows="3" class="content mt5 smart-code-support" placeholder="正文" name="content"></textarea> -->
                 {{ form.content(class="content mt5 smart-code-support") }}
-                <!-- <input name="rid" type="hidden" value="" /> -->
-                <!-- <input type="submit" id="checkall" class="btn btn-small" value="立即修改"> -->
                 {{ form.submit(class="btn btn-small",value="立即回复") }}
             </form>
         </div>
