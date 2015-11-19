@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # -*- coding:utf-8 -*-
 
-from flask import render_template, redirect, url_for, flash, request, abort, jsonify
+from flask import render_template, redirect, url_for, flash, request, abort, jsonify, g
 from . import main
 from .forms import LoginForm, RegisterForm, CreateForm, ReplyForm
 from ..models import User, Topic, Node, Plane, Reply, Favorite
@@ -249,6 +249,36 @@ def node(node_slug):
     return render_template('topic/node_topics.html', node=node, topics=topics, \
         user_topic_count=user_topic_count, user_reply_count=user_reply_count, \
         user_favorite_count=user_favorite_count)
+
+@main.route('/t/edit/<int:id>', methods=['GET', 'POST'])
+@login_required
+def edit_topic(id):
+    topic = Topic.query.filter_by(id=id).first_or_404()
+
+    if current_user.is_authenticated:
+        user_topic_count = Topic.query.filter_by(author_id=current_user.uid).count()
+        user_reply_count = Reply.query.filter_by(author_id=current_user.uid).count()
+        user_favorite_count = Favorite.query.filter_by(involved_reply_id=current_user.uid).count()
+    else:
+        user_topic_count = None
+        user_favorite_count = None
+        user_reply_count = None
+
+    form = CreateForm()
+    if form.validate_on_submit():
+        topic.title = form.title.data
+        topic.content = form.content.data
+        topic.updated = datetime.datetime.utcnow()
+        db.session.add(topic)
+        db.session.commit()
+        return redirect('/t/%s' %id)
+    else:
+        flash_errors(form)
+    form.content.data = topic.content
+    form.title.data = topic.title
+    return render_template('topic/edit.html', topic=topic, user_topic_count=user_topic_count, \
+        user_favorite_count=user_favorite_count, user_reply_count=user_reply_count, form=form)
+
 
 """
 an ajax example

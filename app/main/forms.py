@@ -33,3 +33,5 @@ class CreateForm(Form):
 
 class ReplyForm(Form):
     content = TextAreaField(u'回复内容', validators=[Required()])
+
+# class EditTopicForm(Form):
