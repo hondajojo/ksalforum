@@ -255,14 +255,9 @@ def node(node_slug):
 def edit_topic(id):
     topic = Topic.query.filter_by(id=id).first_or_404()
 
-    if current_user.is_authenticated:
-        user_topic_count = Topic.query.filter_by(author_id=current_user.uid).count()
-        user_reply_count = Reply.query.filter_by(author_id=current_user.uid).count()
-        user_favorite_count = Favorite.query.filter_by(involved_reply_id=current_user.uid).count()
-    else:
-        user_topic_count = None
-        user_favorite_count = None
-        user_reply_count = None
+    user_topic_count = Topic.query.filter_by(author_id=current_user.uid).count()
+    user_reply_count = Reply.query.filter_by(author_id=current_user.uid).count()
+    user_favorite_count = Favorite.query.filter_by(involved_reply_id=current_user.uid).count()
 
     form = CreateForm()
     if form.validate_on_submit():
@@ -276,9 +271,30 @@ def edit_topic(id):
         flash_errors(form)
     form.content.data = topic.content
     form.title.data = topic.title
-    return render_template('topic/edit.html', topic=topic, user_topic_count=user_topic_count, \
+    return render_template('topic/edit.html', user_topic_count=user_topic_count, \
         user_favorite_count=user_favorite_count, user_reply_count=user_reply_count, form=form)
 
+
+@main.route('/reply/edit/<int:id>', methods=['GET', 'POST'])
+@login_required
+def edit_reply(id):
+    reply = Reply.query.filter_by(id=id).first_or_404()
+    form = ReplyForm()
+    user_topic_count = Topic.query.filter_by(author_id=current_user.uid).count()
+    user_reply_count = Reply.query.filter_by(author_id=current_user.uid).count()
+    user_favorite_count = Favorite.query.filter_by(involved_reply_id=current_user.uid).count()
+
+    if form.validate_on_submit():
+        reply.content = form.content.data
+        reply.updated = datetime.datetime.utcnow()
+        db.session.add(reply)
+        db.session.commit()
+        return redirect('/t/%s' % reply.topic_id)
+    else:
+        flash_errors(form)
+    form.content.data = reply.content
+    return render_template('topic/reply_edit.html', form=form, user_topic_count=user_topic_count, \
+        user_favorite_count=user_favorite_count, user_reply_count=user_reply_count)
 
 """
 an ajax example

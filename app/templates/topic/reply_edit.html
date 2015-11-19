@@ -1,0 +1,52 @@
+{% extends 'snippet/layout.html' %}
+
+{% block main %}
+    {% for message in get_flashed_messages() %}
+    <div class="alert alert-warning">
+      <button type="button" class="close" data-dismiss="alert">&times;</button>
+      {{ message }}
+    </div>
+    {% endfor %}
+    <div class="topic-create container-box">
+        <div class="ui-header">
+            <span class="title">编辑回复</span>
+        </div>
+
+        <div class="ui-content">
+            <form class="mt10" action="" method="post">
+              {{ form.hidden_tag() }}
+                <!-- <textarea rows="3" class="content mt5 smart-code-support" placeholder="正文" name="content"></textarea> -->
+                {{ form.content(class="content mt5 smart-code-support") }}
+                <!-- <input name="rid" type="hidden" value="" /> -->
+                <!-- <input type="submit" id="checkall" class="btn btn-small" value="立即修改"> -->
+                {{ form.submit(class="btn btn-small",value="立即回复") }}
+            </form>
+        </div>
+    </div>
+{% endblock %}
+
+{% block sidebar %}
+    <div class="usercard container-box">
+        <div class="ui-header">
+            <a href="/u/{{ current_user.username }}">
+                <img src="/static/avatar/m_{{ current_user.avatar or 'default.png' }}" alt="" class="avatar" />
+            </a>
+            <div class="username">{{ current_user.username }}</div>
+            <div class="website"><a href="{{ current_user.website or '' }}">{{ current_user.website or '' }}</a></div>
+        </div>
+        <div class="ui-content">
+            <div class="status status-topic">
+                <strong><a href="/u/{{ current_user.username }}/topics">{{ user_topic_count }}</a></strong> 主题
+            </div>
+            <div class="status status-reply">
+                <strong><a href="/u/{{ current_user.username }}/replies">{{ user_reply_count }}</a></strong> 回复
+            </div>
+            <div class="status status-favorite">
+                <strong><a href="/u/{{ current_user.username }}/favorites">{{ user_favorite_count }}</a></strong> 收藏
+            </div>
+            <div class="status status-reputation">
+                <strong>{{ current_user.reputation or 0 }}</strong> 威望
+            </div>
+        </div>
+    </div>
+{% endblock %}
