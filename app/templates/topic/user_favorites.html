@@ -3,48 +3,48 @@
 {% block main %}
     <div class="topics container-box user-topics">
         <div class="ui-header">
-            <span class="bread-nav"><a href="{{ url_for('main.index') }}">F2E</a> › <a href="/u/{{ user_info.username }}">{{ user_info.username }}</a> › 主题列表</span>
+            <span class="bread-nav"><a href="{{ url_for('main.index') }}">F2E</a> › <a href="/u/{{ user_info.username }}">{{ user_info.username }}</a> › 收藏的主题列表</span>
         </div>
 
         <div class="ui-content">
-            {% for topic in topics %}
+            {% for favorite in favorites %}
                 <div class="topic-item">
-                    <a href="/u/{{ topic.User._username }}">
-                        <img src="/static/avatar/m_{{ topic.User.avatar or 'default.png' }}" alt="" class="avatar" />
+                    <a href="/u/{{ favorite.User.username }}">
+                        <img src="/static/avatar/m_{{ favorite.User.avatar or 'default.png' }}" alt="" class="avatar" />
                     </a>
                     <div class="main">
                         <h3 class="title">
-                            <a href="/t/{{ topic.Topic.id }}#reply{{ topic.Topic.reply_count or 0 }}">{{ topic.Topic.title }}</a>
+                            <a href="/t/{{ favorite.Topic.id }}">{{ favorite.Topic.title }}</a>
                         </h3>
                         <div class="meta">
-                            <span class="node"><a href="/node/{{ topic.Node.slug }}">{{ topic.Node.name }}</a></span> •
+                            <span class="node"><a href="/node/{{ favorite.Node.slug }}">{{ favorite.Node.name }}</a></span> •
                             <span class="username">
-                                <a href="/u/{{ topic.User.username or topic.User.uid }}">{{ topic.User.username }}</a>
+                                <a href="/u/{{ favorite.User.username or favorite.User.uid }}">{{ favorite.User.username }}</a>
                             </span> •
-                            {% if topic.Topic.last_replied_time %}
-                                <span class="last-touched">{{ moment(topic.Topic.last_touched).fromNow(refresh=True) }}</span> •
+                            {% if favorite.Topic.last_replied_time %}
+                                <span class="last-touched">{{ moment(favorite.Topic.last_touched).fromNow(refresh=True) }}</span> •
                                 <span class="last-reply-username">最后回复来自
-                                    <a href="/u/{{ topic.Topic.last_replied_by }}">
-                                        <strong>{{ topic.Topic.last_replied_by }}</strong>
+                                    <a href="/u/{{ favorite.Topic.last_replied_by }}">
+                                        <strong>{{ favorite.Topic.last_replied_by }}</strong>
                                     </a>
                                 </span>
                             {% else %}
-                                <span class="last-touched">{{ moment(topic.Topic.created).fromNow(refresh=True) }}</span>
+                                <span class="last-touched">{{ moment(favorite.Topic.created).fromNow(refresh=True) }}</span>
                             {% endif %}
                         </div>
                     </div>
-                    {% if topic.Topic.reply_count %}
+                    {% if favorite.Topic.reply_count %}
                         <div class="count">
-                            <a href="/t/{{ topic.Topic.id }}#reply{{ topic.Topic.reply_count or 0 }}">{{ topic.Topic.reply_count or 0 }}</a>
+                            <a href="/t/{{ favorite.id }}">{{ favorite.Topic.reply_count or 0 }}</a>
                         </div>
                     {% endif %}
                 </div>
             {% endfor %}
 
-            {% if not topics %}
+            {% if not favorites %}
                 <div class="pl10 pr10">
-                    <div class="alert mt20 no-topics">
-                        该用户暂时还没有发表过主题。
+                    <div class="alert mt20 no-favorites">
+                        该用户暂时还没有收藏过主题。
                     </div>
                 </div>
             {% endif %}
@@ -60,7 +60,7 @@
                 <img src="/static/avatar/m_{{ user_info.avatar or 'default.png' }}" alt="" class="avatar" />
             </a>
             <div class="username">{{ user_info.username }}</div>
-            <div class="website"><a href="{{ user_info.website or '' }}">{{ user_info.website or '' }}</a></div>
+            <div class="website">{{ user_info.website or '' }}</div>
         </div>
         <div class="ui-content">
             <div class="status status-topic">

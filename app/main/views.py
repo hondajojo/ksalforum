@@ -21,7 +21,7 @@ def index():
     node_count = Node.query.count()
     topic_count = Topic.query.count()
     reply_count = Reply.query.count()
-
+    hot_nodes = Node.query.order_by(Node.topic_count.desc()).all()
     ''' how ugly code ! about plane and node'''
     f = Plane.query.all()
     planes = []
@@ -50,7 +50,7 @@ def index():
     return render_template('topic/topics.html', topics=topics, planes=planes, \
         nodes=nodes, user_count=user_count, node_count=node_count, \
         topic_count=topic_count, reply_count=reply_count, user_topic_count=user_topic_count, \
-        user_reply_count=user_reply_count, user_favorite_count=user_favorite_count)
+        user_reply_count=user_reply_count, user_favorite_count=user_favorite_count, hot_nodes=hot_nodes)
 
 @main.route('/login', methods=['GET','POST'])
 def login():
@@ -235,6 +235,7 @@ def unfavorite():
 @main.route('/node/<node_slug>')
 def node(node_slug):
     node = Node.query.filter_by(slug=node_slug).first_or_404()
+    # node = Node.query.get_or_404(slug=node_slug)
     query = db.session.query(Topic, User)
     topics = query.filter_by(node_id=node.id).join(User, Topic.author_id==User.uid).order_by(Topic.created.desc()).all()
     if current_user.is_authenticated:
@@ -329,6 +330,19 @@ def user_topics(username):
     return render_template('topic/user_topics.html', topics=topics, user_info=user_info, \
             user_topic_count=user_topic_count, user_favorite_count=user_favorite_count, \
             user_reply_count=user_reply_count)
+
+
+@main.route('/u/<username>/favorites')
+def user_favorites(username):
+    user_info = User.query.filter_by(username=username).first_or_404()
+    query = db.session.query(Favorite, Topic, User, Node)
+    favorites = query.filter_by(involved_reply_id=user_info.uid).join(Topic, Favorite.involved_topic_id==Topic.id).join(Node, Topic.node_id==Node.id).join(User, Topic.author_id==User.uid).order_by(Topic.created.desc()).all()
+
+    user_topic_count = Topic.query.filter_by(author_id=user_info.uid).count()
+    user_reply_count = Reply.query.filter_by(author_id=user_info.uid).count()
+    user_favorite_count = Favorite.query.filter_by(involved_reply_id=user_info.uid).count()
+
+    return render_template('topic/user_favorites.html', user_info=user_info, favorites=favorites, user_topic_count=user_topic_count, user_reply_count=user_reply_count, user_favorite_count=user_favorite_count)
 """
 an ajax example
 """
