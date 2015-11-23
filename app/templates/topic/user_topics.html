@@ -1,6 +1,16 @@
 {% extends 'snippet/layout.html' %}
 
 {% block main %}
+<style>
+.pagination .page-info{
+  display: inline-block;
+  vertical-align: text-bottom;
+  line-height: 26px;
+  margin: 0 7px 0 0;
+  color: #999;
+}
+</style>
+
     <div class="topics container-box user-topics">
         <div class="ui-header">
             <span class="bread-nav"><a href="{{ url_for('main.index') }}">F2E</a> › <a href="/u/{{ user_info.username }}">{{ user_info.username }}</a> › 主题列表</span>
@@ -9,17 +19,17 @@
         <div class="ui-content">
             {% for topic in topics %}
                 <div class="topic-item">
-                    <a href="/u/{{ topic.User._username }}">
-                        <img src="/static/avatar/m_{{ topic.User.avatar or 'default.png' }}" alt="" class="avatar" />
+                    <a href="/u/{{ topic.username }}">
+                        <img src="/static/avatar/m_{{ topic.avatar or 'default.png' }}" alt="" class="avatar" />
                     </a>
                     <div class="main">
                         <h3 class="title">
                             <a href="/t/{{ topic.Topic.id }}#reply{{ topic.Topic.reply_count or 0 }}">{{ topic.Topic.title }}</a>
                         </h3>
                         <div class="meta">
-                            <span class="node"><a href="/node/{{ topic.Node.slug }}">{{ topic.Node.name }}</a></span> •
+                            <span class="node"><a href="/node/{{ topic.slug }}">{{ topic.name }}</a></span> •
                             <span class="username">
-                                <a href="/u/{{ topic.User.username or topic.User.uid }}">{{ topic.User.username }}</a>
+                                <a href="/u/{{ topic.username }}">{{ topic.username }}</a>
                             </span> •
                             {% if topic.Topic.last_replied_time %}
                                 <span class="last-touched">{{ moment(topic.Topic.last_touched).fromNow(refresh=True) }}</span> •
@@ -40,6 +50,34 @@
                     {% endif %}
                 </div>
             {% endfor %}
+
+            <div class="pagination">
+              <span class="page-info">共{{ pagination.pages }}页</span>
+            <ul>
+
+              <li {% if not pagination.has_prev %} class="disabled" {% endif %}><a href="{% if pagination.has_prev %}{{ url_for('main.user_topics',username=user_info.username, p=pagination.prev_num) }} {% else %}{{url_for('main.user_topics',username=user_info.username ,p=pagination.page)}}{% endif %}">«</a></li>
+              {% for p in pagination.iter_pages() %}
+                {% if p %}
+                  {% if p == pagination.page %}
+                  <li class="active">
+                    <a href="javascript:;">{{ pagination.page }}</a>
+                  </li>
+                  {% else %}
+                  <li>
+                    <a href="{{ url_for('main.user_topics',username=user_info.username, p=p) }}">{{ p }}</a>
+                  </li>
+                  {% endif %}
+                {% else %}
+                <li class="disabled"><a href="#">&hellip;</a></li>
+                {% endif %}
+              {% endfor %}
+              <li {% if not pagination.has_next %} class="disabled" {% endif %}>
+                <a href="{% if pagination.has_next %}{{ url_for('main.user_topics',username=user_info.username ,p=pagination.next_num) }} {% else %}{{url_for('main.user_topics',username=user_info.username ,p=pagination.page)}}{% endif %}">
+                  »
+                </a>
+              </li>
+            </ul>
+          </div>
 
             {% if not topics %}
                 <div class="pl10 pr10">

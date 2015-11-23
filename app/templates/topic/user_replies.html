@@ -5,6 +5,16 @@
 {% endblock %}
 
 {% block main %}
+<style>
+.pagination .page-info{
+  display: inline-block;
+  vertical-align: text-bottom;
+  line-height: 26px;
+  margin: 0 7px 0 0;
+  color: #999;
+}
+</style>
+
     <div class="replies-lists container-box user-replies">
         <div class="ui-header">
             <span class="bread-nav"><a href="{{ url_for('main.index') }}">F2E</a> › <a href="/u/{{ user_info.username }}">{{ user_info.username }}</a> › 回复列表</span>
@@ -15,7 +25,7 @@
                 <div class="reply-item">
                     <div class="main">
                         <span class="title">
-                            回复了 {{ reply.User.username }} 创建的主题 <a href="/t/{{ reply.Topic.id }}">{{ reply.Topic.title }}</a>
+                            回复了 {{ reply.username }} 创建的主题 <a href="/t/{{ reply.id }}">{{ reply.title }}</a>
                             <div style="float:right;text-align:right"><span>{{ moment(reply.Reply.created).fromNow(refresh=True) }}</span></div>
                         </span>
                         <div class="content">
@@ -24,7 +34,6 @@
                     </div>
                 </div>
             {% endfor %}
-
             {% if not replies %}
                 <div class="pl10 pr10">
                     <div class="alert mt20 no-replies">
@@ -33,6 +42,34 @@
                 </div>
             {% endif %}
         </div>
+
+        <div class="pagination" style="float:right; margin:5px 0px;">
+          <span class="page-info">共{{ pagination.pages }}页</span>
+        <ul>
+
+          <li {% if not pagination.has_prev %} class="disabled" {% endif %}><a href="{% if pagination.has_prev %}{{ url_for('main.user_replies',username=user_info.username, p=pagination.prev_num) }} {% else %}{{url_for('main.user_replies',username=user_info.username ,p=pagination.page)}}{% endif %}">«</a></li>
+          {% for p in pagination.iter_pages() %}
+            {% if p %}
+              {% if p == pagination.page %}
+              <li class="active">
+                <a href="javascript:;">{{ pagination.page }}</a>
+              </li>
+              {% else %}
+              <li>
+                <a href="{{ url_for('main.user_replies',username=user_info.username, p=p) }}">{{ p }}</a>
+              </li>
+              {% endif %}
+            {% else %}
+            <li class="disabled"><a href="#">&hellip;</a></li>
+            {% endif %}
+          {% endfor %}
+          <li {% if not pagination.has_next %} class="disabled" {% endif %}>
+            <a href="{% if pagination.has_next %}{{ url_for('main.user_replies',username=user_info.username ,p=pagination.next_num) }} {% else %}{{url_for('main.user_replies',username=user_info.username ,p=pagination.page)}}{% endif %}">
+              »
+            </a>
+          </li>
+        </ul>
+      </div>
 
     </div>
 {% endblock %}
