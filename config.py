@@ -6,6 +6,7 @@ class Config(object):
     SECRET_KEY = os.environ.get('SECRET_KEY') or 'hard to guess'
     SQLALCHEMY_COMMIT_ON_TEARDOWN =True
     BABEL_DEFAULT_LOCALE = 'zh_Hans_CN'
+    FLASKY_POSTS_PER_PAGE = 10
     # PERMANENT_SESSION_LIFETIME = 15
 
     MAIL_SERVER = 'smtp.163.com'

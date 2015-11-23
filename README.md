@@ -14,4 +14,8 @@ to-do
 
 6.reset/change password
 
-7.change avator 
+7.change avator
+
+8.模板macros化
+
+9.读取数据规范化
