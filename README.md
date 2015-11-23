@@ -8,9 +8,9 @@ to-do
 
 3.~~display /u/username page~~
 
-4.display ~~/u/username/topics~~ /u/username/replies ~~/u/username/favorites page~~
+4.~~display /u/username/topics /u/username/replies /u/username/favorites page~~
 
-5.topic/node/reply next page 
+5.~~topic/node/reply next page~~
 
 6.reset/change password
 
