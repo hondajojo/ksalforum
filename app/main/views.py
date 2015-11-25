@@ -9,23 +9,13 @@ from .. import db
 from werkzeug.security import generate_password_hash, check_password_hash
 from flask.ext.login import login_required, login_user, logout_user, current_user
 import datetime
-from functools import wraps
+from ..utlis import hit
 
 @main.route('/')
 def index():
-    # topics = Topic.query.join(Node, Topic.node_id==Node.id).join(User, Topic.author_id==User.uid)
     page = request.args.get('p', 1, type=int)
-    query = db.session.query(Topic, Node, User)
-    # topics = query.join(Node, Topic.node_id==Node.id).join(User, Topic.author_id==User.uid).order_by(Topic.created.desc()).all()
-    # pagination = query.join(Node, Topic.node_id==Node.id).join(User, Topic.author_id==User.uid).order_by(Topic.created.desc()).paginate(
-    #     page,per_page=current_app.config['FLASKY_POSTS_PER_PAGE'], error_out=True)
-    # (db.session.query(User, Node, Topic)).select_from(Topic).join(Node, Topic.node_id==Node.id)\
-            # .join(User, Topic.author_id==User.uid).order_by(Topic.created.desc())
-    pagination=Topic.query.join(Node, Topic.node_id==Node.id) \
-                .join(User, Topic.author_id==User.uid) \
-                .order_by(Topic.created.desc()) \
-                .add_columns(User.username,User.avator,Node.slug,Node.name) \
-                .paginate(page, per_page=current_app.config['FLASKY_POSTS_PER_PAGE'], error_out=True)
+    pagination = Topic.get_all_topics().paginate(page,
+        per_page=current_app.config['FLASKY_POSTS_PER_PAGE'], error_out=True)
     topics = pagination.items
     nodes = Node.query.all()
     user_count = User.query.count()
@@ -59,34 +49,36 @@ def index():
         user_favorite_count = None
         user_reply_count = None
 
-    return render_template('topic/topics.html', topics=topics, planes=planes, \
-        nodes=nodes, user_count=user_count, node_count=node_count, \
-        topic_count=topic_count, reply_count=reply_count, user_topic_count=user_topic_count, \
-        user_reply_count=user_reply_count, user_favorite_count=user_favorite_count, hot_nodes=hot_nodes, \
-        pagination=pagination)
+    return render_template('topic/topics.html', topics=topics, planes=planes,
+                            nodes=nodes, user_count=user_count, node_count=node_count,
+                            topic_count=topic_count, reply_count=reply_count,
+                            user_topic_count=user_topic_count,user_reply_count=user_reply_count,
+                            user_favorite_count=user_favorite_count, hot_nodes=hot_nodes,
+                            pagination=pagination)
 
 @main.route('/login', methods=['GET','POST'])
 def login():
     if current_user.is_authenticated:
         return redirect(url_for('main.index'))
-    else:
-        form = LoginForm()
-        if form.validate_on_submit():
-            user = User.query.filter_by(email=form.email.data).first()
-            if user and check_password_hash(user.password, form.password.data):
-                login_user(user)
-                return redirect(request.args.get('next') or url_for('main.index'))
-            else:
-                flash(u'邮箱或密码错误!')
+    form = LoginForm()
+    if form.validate_on_submit():
+        user = User.query.filter_by(email=form.email.data).first()
+        if user and check_password_hash(user.password, form.password.data):
+            login_user(user)
+            return redirect(request.args.get('next') or url_for('main.index'))
         else:
-            flash_errors(form)
-        return render_template('user/login.html',form=form)
+            flash(u'邮箱或密码错误!')
+    else:
+        flash_errors(form)
+    return render_template('user/login.html',form=form)
 
 @main.route('/register', methods=['GET', 'POST'])
 def register():
     form = RegisterForm()
     if form.validate_on_submit():
-        user = User(username=form.username.data, email=form.email.data, password=generate_password_hash(form.password.data), created=datetime.datetime.utcnow())
+        user = User(username=form.username.data,
+            email=form.email.data, password=generate_password_hash(form.password.data),
+            created=datetime.datetime.utcnow())
         db.session.add(user)
         db.session.commit()
         return redirect(url_for('main.index'))
@@ -143,24 +135,15 @@ def create(node):
         return redirect(url_for('main.index'))
     else:
         flash_errors(form)
-    return render_template('topic/create.html', form=form, user_info=user_info, node=node, current_user_topics_count=current_user_topics_count)
-
-def hit(f):
-    @wraps(f)
-    def wrapper(id):
-        topic = Topic.query.filter_by(id=id).first_or_404()
-        topic.hits += 1
-        db.session.add(topic)
-        db.session.commit()
-        return f(id)
-    return wrapper
+    return render_template('topic/create.html', form=form,
+                            user_info=user_info,node=node,
+                            current_user_topics_count=current_user_topics_count)
 
 @main.route('/t/<int:id>', methods=['GET','POST'])
 @hit
 def view(id):
-    query = db.session.query(Topic, Node, User)
-    topic = query.filter_by(id=id).join(Node, Topic.node_id==Node.id).join(User, Topic.author_id==User.uid).first()
-    replies = db.session.query(Reply, User).filter_by(topic_id=id).join(User, Reply.author_id==User.uid).order_by(Reply.created.desc()).all()
+    topic = Topic.get_topic_by_id(id=id).first_or_404()
+    replies = Reply.get_replies_by_topic_id(topic_id=id).all()
     topic_favorited = None
     if current_user.is_authenticated:
         topic_favorited = Favorite.query.filter_by(involved_reply_id=current_user.uid).filter_by(involved_topic_id=id).first()
@@ -175,33 +158,31 @@ def view(id):
         user_reply_count = None
 
     form = ReplyForm()
-    if topic:
-        if form.validate_on_submit():
-            content = form.content.data
-            topic_id = id
-            author_id = current_user.uid
-            created = datetime.datetime.utcnow()
-            reply = Reply(content=content, topic_id=topic_id, author_id=author_id, created=created)
-
-            topic = Topic.query.filter_by(id=id).first_or_404()
-            if not topic.reply_count:
-                topic.reply_count = 0
-            topic.reply_count += 1
-            topic.last_replied_by = current_user.username
-            topic.last_replied_time = created
-            topic.last_touched = created
-
-            db.session.add(reply)
-            db.session.add(topic)
-            db.session.commit()
-            return redirect('/t/%s' % id)
-        else:
-            flash_errors(form)
-        return render_template('topic/view.html', topic=topic, form=form, \
-            replies=replies, topic_favorited=topic_favorited, user_reply_count=user_reply_count, \
-            user_topic_count=user_topic_count, user_favorite_count=user_favorite_count)
+    if form.validate_on_submit():
+        content = form.content.data
+        topic_id = id
+        author_id = current_user.uid
+        created = datetime.datetime.utcnow()
+        reply = Reply(content=content,topic_id=topic_id,
+                      author_id=author_id, created=created)
+        topic = Topic.query.filter_by(id=id).first_or_404()
+        if not topic.reply_count:
+            topic.reply_count = 0
+        topic.reply_count += 1
+        topic.last_replied_by = current_user.username
+        topic.last_replied_time = created
+        topic.last_touched = created
+        db.session.add(reply)
+        db.session.add(topic)
+        db.session.commit()
+        return redirect(url_for('main.view', id=id))
     else:
-        abort(404)
+        flash_errors(form)
+    return render_template('topic/view.html', topic=topic, form=form,
+                            replies=replies, topic_favorited=topic_favorited,
+                            user_reply_count=user_reply_count,
+                            user_topic_count=user_topic_count,
+                            user_favorite_count=user_favorite_count)
 
 @main.route('/favorite', methods=['GET', 'POST'])
 def favorite():
@@ -222,7 +203,9 @@ def favorite():
         if have_fav:
             return jsonify({'success':0,'message':'already_favorited'})
 
-        favorite = Favorite(owner_user_id=owner_user_id,involved_type=involved_type,involved_topic_id=involved_topic_id,involved_reply_id=current_user.uid,created=created)
+        favorite = Favorite(owner_user_id=owner_user_id,involved_type=involved_type,
+                            involved_topic_id=involved_topic_id,
+                            involved_reply_id=current_user.uid,created=created)
         db.session.add(favorite)
         db.session.commit()
         return jsonify({'success':1,'message':'favorite_success'})
@@ -249,12 +232,9 @@ def unfavorite():
 def node(node_slug):
     node = Node.query.filter_by(slug=node_slug).first_or_404()
     page = request.args.get('p', 1, type=int)
-    query = db.session.query(Topic, User)
-    topics = query.filter_by(node_id=node.id).join(User, Topic.author_id==User.uid).order_by(Topic.created.desc()).all()
-    pagination = Topic.query.filter_by(node_id=node.id).join(User, Topic.author_id==User.uid) \
-            .order_by(Topic.created.desc()) \
-            .add_columns(User.username, User.avator) \
-            .paginate(page, per_page=current_app.config['FLASKY_POSTS_PER_PAGE'], error_out=True)
+    pagination = Topic.get_topics_by_node(node_id=node.id) \
+        .paginate(page, per_page=current_app.config['FLASKY_POSTS_PER_PAGE'],
+        error_out=True)
     topics = pagination.items
     if current_user.is_authenticated:
         user_topic_count = Topic.query.filter_by(author_id=current_user.uid).count()
@@ -329,17 +309,15 @@ def profile(username):
     user_reply_count = Reply.query.filter_by(author_id=user_info.uid).count()
     user_favorite_count = Favorite.query.filter_by(involved_reply_id=user_info.uid).count()
 
-    return render_template('topic/profile.html', user_info=user_info, topics=topics, replies=replies, \
-            user_topic_count=user_topic_count, user_favorite_count=user_favorite_count, \
-            user_reply_count=user_reply_count)
+    return render_template('topic/profile.html', user_info=user_info, topics=topics,
+                            replies=replies, user_topic_count=user_topic_count,
+                            user_favorite_count=user_favorite_count,
+                            user_reply_count=user_reply_count)
 
 @main.route('/u/<username>/topics')
 def user_topics(username):
     user_info = User.query.filter_by(username=username).first_or_404()
-    # query = db.session.query(Topic, Node, User)
     page = request.args.get('p', 1, type=int)
-    # topics = query.filter_by(author_id=user_info.uid).join(Node, Topic.node_id==Node.id)\
-    #         .join(User, Topic.author_id==User.uid).order_by(Topic.created.desc()).all()
     pagination = Topic.query.filter_by(author_id=user_info.uid) \
             .join(Node, Topic.node_id==Node.id) \
             .join(User, Topic.author_id==User.uid) \
@@ -352,49 +330,51 @@ def user_topics(username):
     user_reply_count = Reply.query.filter_by(author_id=user_info.uid).count()
     user_favorite_count = Favorite.query.filter_by(involved_reply_id=user_info.uid).count()
 
-    return render_template('topic/user_topics.html', topics=topics, user_info=user_info, \
-            user_topic_count=user_topic_count, user_favorite_count=user_favorite_count, \
-            user_reply_count=user_reply_count, pagination=pagination)
+    return render_template('topic/user_topics.html', topics=topics, user_info=user_info,
+                            user_topic_count=user_topic_count,
+                            user_favorite_count=user_favorite_count,
+                            user_reply_count=user_reply_count, pagination=pagination)
 
 
 @main.route('/u/<username>/favorites')
 def user_favorites(username):
     user_info = User.query.filter_by(username=username).first_or_404()
-    query = db.session.query(Favorite, Topic, User, Node)
-    favorites = query.filter_by(involved_reply_id=user_info.uid).join(Topic, Favorite.involved_topic_id==Topic.id) \
-            .join(Node, Topic.node_id==Node.id).join(User, Topic.author_id==User.uid) \
-            .order_by(Topic.created.desc()).all()
-
+    page = request.args.get('p', 1, type=int)
+    # query = db.session.query(Favorite, Topic, User, Node)
+    # favorites = query.filter_by(involved_reply_id=user_info.uid).join(Topic, Favorite.involved_topic_id==Topic.id) \
+    #         .join(Node, Topic.node_id==Node.id).join(User, Topic.author_id==User.uid) \
+    #         .order_by(Topic.created.desc()).all()
+    # pagination = Favorite.query.filter_by(involved_reply_id=user)
+    pagination = Favorite.get_fav_topics_by_user_uid(uid=user_info.uid) \
+            .paginate(page, per_page=current_app.config['FLASKY_POSTS_PER_PAGE'], error_out=True)
+    favorites = pagination.items
     user_topic_count = Topic.query.filter_by(author_id=user_info.uid).count()
     user_reply_count = Reply.query.filter_by(author_id=user_info.uid).count()
     user_favorite_count = Favorite.query.filter_by(involved_reply_id=user_info.uid).count()
 
-    return render_template('topic/user_favorites.html', user_info=user_info, \
-            favorites=favorites, user_topic_count=user_topic_count, \
-            user_reply_count=user_reply_count, user_favorite_count=user_favorite_count)
+    return render_template('topic/user_favorites.html', user_info=user_info,
+                            favorites=favorites, user_topic_count=user_topic_count,
+                            user_reply_count=user_reply_count,
+                            user_favorite_count=user_favorite_count,
+                            pagination=pagination)
 
 @main.route('/u/<username>/replies')
 def user_replies(username):
     user_info = User.query.filter_by(username=username).first_or_404()
     page = request.args.get('p', 1, type=int)
-    # query = db.session.query(Reply, Topic, User, Node)
-    # replies = query.filter_by(author_id=user_info.uid).join(Topic, Reply.topic_id==Topic.id) \
-            # .join(Node, Topic.node_id==Node.id).join(User, Topic.author_id==User.uid) \
-            # .order_by(Reply.created.desc()).all()
-    pagination = Reply.query.filter_by(author_id=user_info.uid) \
-            .join(Topic, Reply.topic_id==Topic.id) \
-            .join(User, Topic.author_id==User.uid) \
-            .order_by(Reply.created.desc()) \
-            .add_columns(User.username, Topic.title, Topic.id) \
-            .paginate(page, per_page=current_app.config['FLASKY_POSTS_PER_PAGE'], error_out=True)
+    pagination = Reply.get_replies_by_author(author_id=user_info.uid) \
+        .paginate(page, per_page=current_app.config['FLASKY_POSTS_PER_PAGE'],
+        error_out=True)
     replies = pagination.items
     user_topic_count = Topic.query.filter_by(author_id=user_info.uid).count()
     user_reply_count = Reply.query.filter_by(author_id=user_info.uid).count()
     user_favorite_count = Favorite.query.filter_by(involved_reply_id=user_info.uid).count()
 
-    return render_template('topic/user_replies.html',user_info=user_info, \
-            replies=replies, user_topic_count=user_topic_count, \
-            user_reply_count=user_reply_count, user_favorite_count=user_favorite_count, pagination=pagination)
+    return render_template('topic/user_replies.html',user_info=user_info,
+                            replies=replies, user_topic_count=user_topic_count, \
+                            user_reply_count=user_reply_count,
+                            user_favorite_count=user_favorite_count,
+                            pagination=pagination)
 """
 an ajax example
 """

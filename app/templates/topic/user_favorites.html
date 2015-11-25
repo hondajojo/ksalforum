@@ -1,6 +1,16 @@
 {% extends 'snippet/layout.html' %}
 
 {% block main %}
+<style>
+.pagination .page-info{
+  display: inline-block;
+  vertical-align: text-bottom;
+  line-height: 26px;
+  margin: 0 7px 0 0;
+  color: #999;
+}
+</style>
+
     <div class="topics container-box user-topics">
         <div class="ui-header">
             <span class="bread-nav"><a href="{{ url_for('main.index') }}">F2E</a> › <a href="/u/{{ user_info.username }}">{{ user_info.username }}</a> › 收藏的主题列表</span>
@@ -9,37 +19,65 @@
         <div class="ui-content">
             {% for favorite in favorites %}
                 <div class="topic-item">
-                    <a href="/u/{{ favorite.User.username }}">
-                        <img src="/static/avatar/m_{{ favorite.User.avatar or 'default.png' }}" alt="" class="avatar" />
+                    <a href="/u/{{ favorite.username }}">
+                        <img src="/static/avatar/m_{{ favorite.avatar or 'default.png' }}" alt="" class="avatar" />
                     </a>
                     <div class="main">
                         <h3 class="title">
-                            <a href="/t/{{ favorite.Topic.id }}">{{ favorite.Topic.title }}</a>
+                            <a href="/t/{{ favorite.id }}">{{ favorite.title }}</a>
                         </h3>
                         <div class="meta">
-                            <span class="node"><a href="/node/{{ favorite.Node.slug }}">{{ favorite.Node.name }}</a></span> •
+                            <span class="node"><a href="/node/{{ favorite.slug }}">{{ favorite.name }}</a></span> •
                             <span class="username">
-                                <a href="/u/{{ favorite.User.username or favorite.User.uid }}">{{ favorite.User.username }}</a>
+                                <a href="/u/{{ favorite.username or favorite.uid }}">{{ favorite.username }}</a>
                             </span> •
-                            {% if favorite.Topic.last_replied_time %}
-                                <span class="last-touched">{{ moment(favorite.Topic.last_touched).fromNow(refresh=True) }}</span> •
+                            {% if favorite.last_replied_time %}
+                                <span class="last-touched">{{ moment(favorite.last_touched).fromNow(refresh=True) }}</span> •
                                 <span class="last-reply-username">最后回复来自
-                                    <a href="/u/{{ favorite.Topic.last_replied_by }}">
-                                        <strong>{{ favorite.Topic.last_replied_by }}</strong>
+                                    <a href="/u/{{ favorite.last_replied_by }}">
+                                        <strong>{{ favorite.last_replied_by }}</strong>
                                     </a>
                                 </span>
                             {% else %}
-                                <span class="last-touched">{{ moment(favorite.Topic.created).fromNow(refresh=True) }}</span>
+                                <span class="last-touched">{{ moment(favorite.created).fromNow(refresh=True) }}</span>
                             {% endif %}
                         </div>
                     </div>
-                    {% if favorite.Topic.reply_count %}
+                    {% if favorite.reply_count %}
                         <div class="count">
-                            <a href="/t/{{ favorite.id }}">{{ favorite.Topic.reply_count or 0 }}</a>
+                            <a href="/t/{{ favorite.id }}">{{ favorite.reply_count or 0 }}</a>
                         </div>
                     {% endif %}
                 </div>
             {% endfor %}
+
+            <div class="pagination">
+              <span class="page-info">共{{ pagination.pages }}页</span>
+            <ul>
+
+              <li {% if not pagination.has_prev %} class="disabled" {% endif %}><a href="{% if pagination.has_prev %}{{ url_for('main.user_favorites',username=user_info.username, p=pagination.prev_num) }} {% else %}{{url_for('main.user_favorites',username=user_info.username ,p=pagination.page)}}{% endif %}">«</a></li>
+              {% for p in pagination.iter_pages() %}
+                {% if p %}
+                  {% if p == pagination.page %}
+                  <li class="active">
+                    <a href="javascript:;">{{ pagination.page }}</a>
+                  </li>
+                  {% else %}
+                  <li>
+                    <a href="{{ url_for('main.user_favorites',username=user_info.username, p=p) }}">{{ p }}</a>
+                  </li>
+                  {% endif %}
+                {% else %}
+                <li class="disabled"><a href="#">&hellip;</a></li>
+                {% endif %}
+              {% endfor %}
+              <li {% if not pagination.has_next %} class="disabled" {% endif %}>
+                <a href="{% if pagination.has_next %}{{ url_for('main.user_favorites',username=user_info.username ,p=pagination.next_num) }} {% else %}{{url_for('main.user_favorites',username=user_info.username ,p=pagination.page)}}{% endif %}">
+                  »
+                </a>
+              </li>
+            </ul>
+          </div>
 
             {% if not favorites %}
                 <div class="pl10 pr10">

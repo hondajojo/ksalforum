@@ -52,15 +52,15 @@ $(document).ready(function(){
 {% block main %}
     <div class="topic-detail container-box">
         <div class="ui-header">
-            <a href="/u/{{ topic.User.username or topic.User.uid }}">
-                <img src="/static/avatar/m_{{ topic.User.avatar or 'default.png' }}" alt="" class="avatar" />
+            <a href="/u/{{ topic.username or topic.uid }}">
+                <img src="/static/avatar/m_{{ topic.avatar or 'default.png' }}" alt="" class="avatar" />
             </a>
             <div class="main">
                 <h3 class="title">{{ topic.Topic.title }}</h3>
                 <div class="meta">
-                    <span class="node"><a href="/node/{{ topic.Node.slug }}">{{ topic.Node.name }}</a></span> •
+                    <span class="node"><a href="/node/{{ topic.slug }}">{{ topic.name }}</a></span> •
                     <span class="username">
-                        <a href="/u/{{ topic.User.username or topic.User.uid }}">{{ topic.User.username }}</a>
+                        <a href="/u/{{ topic.username or topic.uid }}">{{ topic.username }}</a>
                     </span> •
                     {% if topic.Topic.last_replied_time %}
                         <span class="created-time">发表于 {{ topic.Topic.reated }}</span> •
@@ -81,14 +81,14 @@ $(document).ready(function(){
         </div>
         <div class="ui-footer">
             {% if not topic_favorited %}
-            <a href="/favorite?involved_topic_id={{ topic.Topic.id }}&involved_type={{ topic.Topic.node_id }}&owner_user_id={{ topic.User.uid }}" class="J_topicFavorite" data-type="favorite">加入收藏</a>
+            <a href="/favorite?involved_topic_id={{ topic.Topic.id }}&involved_type={{ topic.Topic.node_id }}&owner_user_id={{ topic.uid }}" class="J_topicFavorite" data-type="favorite">加入收藏</a>
             {% else %}
-            <a href="/unfavorite?involved_topic_id={{ topic.Topic.id }}&involved_type={{ topic.Topic.node_id }}&owner_user_id={{ topic.User.uid }}" class="J_topicFavorite" data-type="unfavorite">取消收藏</a>
+            <a href="/unfavorite?involved_topic_id={{ topic.Topic.id }}&involved_type={{ topic.Topic.node_id }}&owner_user_id={{ topic.uid }}" class="J_topicFavorite" data-type="unfavorite">取消收藏</a>
             {% endif %}
-            <a href="#" onclick="window.open('https://twitter.com/intent/tweet?hashtags={{ topic.Node.slug }}&text={{ topic.Topic.title }}&url=http://{{ request.host }}{{ request.uri }}');">Tweet</a>
+            <a href="#" onclick="window.open('https://twitter.com/intent/tweet?hashtags={{ topic.slug }}&text={{ topic.Topic.title }}&url=http://{{ request.host }}{{ request.uri }}');">Tweet</a>
             <a href="#" onclick="window.open('http://service.weibo.com/share/share.php?url=http://{{ request.host }}{{ request.uri }}&title=F2E%20-%20{{ topic.Topic.title }}', '_blank', 'width=550, height=370');">新浪微博</a>
             <a href="/vote?topic_id={{ topic.Topic.id }}" class="J_topicVote">喜欢</a>
-            {% if current_user.is_authenticated and current_user.uid == topic.User.uid %}
+            {% if current_user.is_authenticated and current_user.uid == topic.uid %}
                 <a href="/t/edit/{{ topic.Topic.id }}" class="fr">编辑主题</a>
             {% endif %}
             <span class="hits fr mr10">{{ topic.Topic.hits or 0 }} 次点击</span>
@@ -103,16 +103,16 @@ $(document).ready(function(){
         <div class="ui-content">
             {% for reply in replies %}
                 <div class="reply-item">
-                    <a href="/u/{{ reply.User.username }}">
-                        <img src="/static/avatar/m_{{ reply.User.avatar or 'default.png' }}" alt="" class="avatar" />
+                    <a href="/u/{{ reply.username }}">
+                        <img src="/static/avatar/m_{{ reply.avatar or 'default.png' }}" alt="" class="avatar" />
                     </a>
                     <div class="main">
                         <div class="meta">
-                            <a href="/u/{{ reply.User.username }}" class="reply-username">
-                                <span class="username">{{ reply.User.username }}</span>
+                            <a href="/u/{{ reply.username }}" class="reply-username">
+                                <span class="username">{{ reply.username }}</span>
                             </a>
                             <span class="time">{{ moment(reply.Reply.created).fromNow(refresh=True) }}</span>
-                            {% if current_user.is_authenticated and current_user.uid == reply.User.uid %}
+                            {% if current_user.is_authenticated and current_user.uid == reply.uid %}
                                 <a href="/reply/edit/{{ reply.Reply.id }}">编辑回复</a>
                             {% endif %}
                             <span class="floor fr">#{{ floor }}</span>

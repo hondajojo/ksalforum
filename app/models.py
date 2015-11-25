@@ -50,6 +50,30 @@ class Topic(db.Model):
     last_replied_time = db.Column(db.DateTime, nullable = True)
     last_touched = db.Column(db.DateTime, nullable = True)
 
+    @classmethod
+    def get_all_topics(cls):
+        topics = cls.query.join(Node, cls.node_id==Node.id) \
+            .join(User, cls.author_id==User.uid) \
+            .order_by(cls.created.desc()) \
+            .add_columns(User.username,User.avator,Node.slug,Node.name)
+        return topics
+
+    @classmethod
+    def get_topics_by_node(cls, node_id=None):
+        topics = cls.query.filter_by(node_id=node_id) \
+            .join(User, cls.author_id==User.uid) \
+            .order_by(cls.created.desc()) \
+            .add_columns(User.username, User.avator)
+        return topics
+
+    @classmethod
+    def get_topic_by_id(cls,id=None):
+        topic = cls.query.filter_by(id=id) \
+            .join(Node, cls.node_id==Node.id) \
+            .join(User, cls.author_id==User.uid) \
+            .add_columns(Node.slug, Node.name, User.username, User.uid, User.avator)
+        return topic
+
 class Node(db.Model):
     __tablename__ = 'node'
     id = db.Column(db.Integer, primary_key = True)
@@ -83,6 +107,23 @@ class Reply(db.Model):
     down_vote = db.Column(db.Integer, nullable = True)
     last_touched = db.Column(db.DateTime)
 
+    @classmethod
+    def get_replies_by_author(cls,author_id=None):
+        replies = cls.query.filter_by(author_id=author_id) \
+            .join(Topic, cls.topic_id==Topic.id) \
+            .join(User, Topic.author_id==User.uid) \
+            .order_by(cls.created.desc()) \
+            .add_columns(User.username, Topic.title, Topic.id)
+        return replies
+
+    @classmethod
+    def get_replies_by_topic_id(cls,topic_id=None):
+        replies = Reply.query.filter_by(topic_id=topic_id) \
+            .join(User, cls.author_id==User.uid) \
+            .order_by(cls.created.desc()) \
+            .add_columns(User.username, User.avator, User.uid)
+        return replies
+
 class Favorite(db.Model):
     __tablename__ = 'favorite'
     id = db.Column(db.Integer, primary_key = True)
@@ -92,6 +133,18 @@ class Favorite(db.Model):
     involved_reply_id = db.Column(db.Integer, nullable = True)
     created = db.Column(db.DateTime)
 
+    @classmethod
+    def get_fav_topics_by_user_uid(cls, uid=None):
+        topics = cls.query.filter_by(involved_reply_id=uid) \
+            .join(Topic, cls.involved_topic_id==Topic.id) \
+            .join(Node, Topic.node_id==Node.id) \
+            .join(User, Topic.author_id==User.uid) \
+            .order_by(Topic.created.desc()) \
+            .add_columns(User.username, User.uid, User.avator, Node.slug,Node.name,
+                         Topic.id, Topic.title, Topic.last_replied_by,
+                         Topic.last_replied_time, Topic.last_touched,
+                         Topic.created, Topic.reply_count)
+        return topics
 @login_manager.user_loader
 def load_user(user_id):
     return User.query.get(int(user_id))
