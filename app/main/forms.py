@@ -35,5 +35,14 @@ class ReplyForm(Form):
     content = TextAreaField(u'回复内容', validators=[Required()])
     submit = SubmitField(u'立即回复')
 
+class ChangePasswordForm(Form):
+    current_password = PasswordField(u'当前密码', validators=[Required(), Length(4, 64)])
+    new_password = PasswordField(u'新密码', validators=[Required(), Length(4, 64), EqualTo('new_password_confirm', message=u'两次密码不匹配')])
+    new_password_confirm = PasswordField(u'新密码(确认)', validators=[Required()])
+    submit = SubmitField(u'保存改动')
+
+
+    # def validate_password(self, field):
+
 
 # class EditTopicForm(Form):

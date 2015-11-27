@@ -26,6 +26,9 @@ class User(UserMixin, db.Model):
     douban = db.Column(db.Text)
     last_login = db.Column(db.DateTime, nullable = True)
 
+    def verify_password(self, passwd):
+        return check_password_hash(self.password, passwd)
+
     def get_id(self):
         try:
             return unicode(self.uid)

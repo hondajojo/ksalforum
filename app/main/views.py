@@ -3,7 +3,7 @@
 
 from flask import render_template, redirect, url_for, flash, request, abort, jsonify, g, current_app
 from . import main
-from .forms import LoginForm, RegisterForm, CreateForm, ReplyForm
+from .forms import LoginForm, RegisterForm, CreateForm, ReplyForm, ChangePasswordForm
 from ..models import User, Topic, Node, Plane, Reply, Favorite
 from .. import db
 from werkzeug.security import generate_password_hash, check_password_hash
@@ -113,6 +113,23 @@ def setting():
         flash(u'保存成功')
         return redirect(url_for('main.setting'))
     return render_template('user/setting.html', user_info=user_info)
+
+@main.route('/setting/password', methods=['GET', 'POST'])
+@login_required
+def change_password():
+    form = ChangePasswordForm()
+    if form.validate_on_submit():
+        if current_user.verify_password(form.current_password.data):
+            current_user.password = generate_password_hash(form.new_password.data)
+            db.session.add(current_user)
+            db.session.commit()
+            # flash(u'密码已更改')
+            return redirect(url_for('main.index'))
+        else:
+            flash(u'密码错误')
+    else:
+        flash_errors(form)
+    return render_template('user/setting_password.html', form=form)
 
 @main.route('/t/create/<node>', methods=['GET','POST'])
 @login_required
