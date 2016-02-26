@@ -13,7 +13,7 @@ class Config(object):
     MAIL_PORT = '25'
     MAIL_USE_TLS = True
     MAIL_USERNAME = 'cm1130335361@163.com'
-    MAIL_PASSWORD = '6776383071'
+    MAIL_PASSWORD = ''
     FLASKY_MAIL_SUBJECT_PREFIX = '[Flasky]'
     FLASKY_MAIL_SENDER = 'cm1130335361@163.com'
 
